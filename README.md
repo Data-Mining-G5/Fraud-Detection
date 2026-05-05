@@ -63,7 +63,33 @@ python preprocess_data.py --dry-run
 
 Responsible: Clayton Simoneaux
 
-Stub: fraud vs non-fraud EDA, correlation/outlier/indicator analysis, feature importance, and error analysis.
+Role 2 owns the exploratory feature analysis handoff for the modeling roles. The notebook runs this step by using `role2_analysis.py`, which:
+
+- Load `clean_data.csv` for whole-dataset fraud vs non-fraud EDA.
+- Load `data/processed/train.csv` and `data/processed/validation.csv` from Role 1 for validation-based analysis.
+- Summarize class balance and the overall fraud rate.
+- Measure feature correlations with the `Class` target.
+- Identify high-lift outlier signals and simple percentile-based indicator rules.
+- Train an exploratory balanced logistic regression model on the Role 1 training split.
+- Save feature-importance and validation error-count artifacts for review.
+
+When the Role 2 notebook section is run, it writes:
+
+- `role2_outputs/class_balance.png`
+- `role2_outputs/top_correlations.png`
+- `role2_outputs/correlations.csv`
+- `role2_outputs/outlier_signals.csv`
+- `role2_outputs/indicator_rules.csv`
+- `role2_outputs/feature_importance.csv`
+- `role2_outputs/validation_error_counts.csv`
+
+Role 2 should be treated as exploratory analysis, not final model selection. The logistic regression in this step is used to inspect feature importance and validation errors.
+
+To run the Role 2 script directly after Role 1 artifacts exist, run from the project root:
+
+```bash
+python role2_analysis.py
+```
 
 ### Role 3: Model Building
 
