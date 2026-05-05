@@ -46,14 +46,20 @@ def preprocess(df: pd.DataFrame) -> pd.DataFrame:
 
 def summarize(raw_df: pd.DataFrame, clean_df: pd.DataFrame) -> str:
     class_counts = clean_df["Class"].value_counts().sort_index()
+    non_fraud_count = int(class_counts.get(0, 0))
+    fraud_count = int(class_counts.get(1, 0))
+    fraud_rate = clean_df["Class"].mean()
+
     return "\n".join(
         [
+            "Duplicate/null/class-balance checks",
             f"Raw rows: {len(raw_df)}",
+            f"Null values: {int(raw_df.isna().sum().sum())}",
             f"Clean rows: {len(clean_df)}",
             f"Duplicate rows removed: {len(raw_df) - len(clean_df)}",
-            f"Non-fraud rows: {int(class_counts.get(0, 0))}",
-            f"Fraud rows: {int(class_counts.get(1, 0))}",
-            f"Fraud rate: {clean_df['Class'].mean():.6f}",
+            f"Non-fraud rows: {non_fraud_count}",
+            f"Fraud rows: {fraud_count}",
+            f"Fraud rate: {fraud_rate:.6f} ({fraud_rate:.4%})",
         ]
     )
 
