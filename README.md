@@ -68,20 +68,23 @@ Role 2 owns the exploratory feature analysis handoff for the modeling roles. The
 - Load `clean_data.csv` for whole-dataset fraud vs non-fraud EDA.
 - Load `data/processed/train.csv` and `data/processed/validation.csv` from Role 1 for validation-based analysis.
 - Summarize class balance and the overall fraud rate.
+- Save fraud vs non-fraud feature mean differences.
 - Measure feature correlations with the `Class` target.
 - Identify high-lift outlier signals and simple percentile-based indicator rules.
 - Train an exploratory balanced logistic regression model on the Role 1 training split.
-- Save feature-importance and validation error-count artifacts for review.
+- Save feature-importance, validation error-count, and missed-fraud gap artifacts for review.
 
 When the Role 2 notebook section is run, it writes:
 
 - `role2_outputs/class_balance.png`
 - `role2_outputs/top_correlations.png`
+- `role2_outputs/fraud_group_summary.csv`
 - `role2_outputs/correlations.csv`
 - `role2_outputs/outlier_signals.csv`
 - `role2_outputs/indicator_rules.csv`
 - `role2_outputs/feature_importance.csv`
 - `role2_outputs/validation_error_counts.csv`
+- `role2_outputs/missed_vs_caught_fraud_gaps.csv`
 
 Role 2 should be treated as exploratory analysis, not final model selection. The logistic regression in this step is used to inspect feature importance and validation errors.
 
