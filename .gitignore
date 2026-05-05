@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Generated data artifacts
+clean_data.csv
+data/processed/*.csv
+
+# Generated analysis outputs
+role2_outputs/
+
+# Local/editor/OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
