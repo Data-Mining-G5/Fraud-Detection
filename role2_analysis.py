@@ -17,6 +17,10 @@ OUTPUT_DIR = ROOT / "role2_outputs"
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 
+def ensure_output_dir() -> None:
+    OUTPUT_DIR.mkdir(exist_ok=True)
+
+
 def load_data() -> pd.DataFrame:
     df = pd.read_csv(DATA_PATH)
     if "Class" not in df.columns:
@@ -73,6 +77,16 @@ def get_correlations(df: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def get_fraud_group_summary(df: pd.DataFrame) -> pd.DataFrame:
+    grouped = df.groupby("Class").mean(numeric_only=True).transpose()
+    grouped = grouped.rename(columns={0: "non_fraud_mean", 1: "fraud_mean"})
+    grouped["mean_difference"] = grouped["fraud_mean"] - grouped["non_fraud_mean"]
+    grouped["absolute_difference"] = grouped["mean_difference"].abs()
+    return grouped.sort_values("absolute_difference", ascending=False).reset_index(
+        names="feature"
+    )
+
+
 def print_eda(df: pd.DataFrame) -> None:
     counts = df["Class"].value_counts().sort_index()
     print("EDA")
@@ -80,6 +94,16 @@ def print_eda(df: pd.DataFrame) -> None:
     print(f"Non-Fraud: {int(counts.get(0, 0))}")
     print(f"Fraud: {int(counts.get(1, 0))}")
     print(f"Fraud rate: {df['Class'].mean():.6f}")
+    print()
+
+
+def print_fraud_group_summary(summary: pd.DataFrame) -> None:
+    print("Largest Fraud vs Non-Fraud Mean Differences")
+    for row in summary.head(10).itertuples(index=False):
+        print(
+            f"{row.feature}: non-fraud={row.non_fraud_mean:.6f} "
+            f"fraud={row.fraud_mean:.6f} diff={row.mean_difference:.6f}"
+        )
     print()
 
 
@@ -160,6 +184,8 @@ def print_indicators(df: pd.DataFrame) -> None:
 def print_feature_importance_and_errors(
     train_df: pd.DataFrame, validation_df: pd.DataFrame
 ) -> None:
+    ensure_output_dir()
+
     x_train = train_df.drop(columns="Class")
     y_train = train_df["Class"]
     x_validation = validation_df.drop(columns="Class")
@@ -197,12 +223,12 @@ def print_feature_importance_and_errors(
         default="true_negative",
     )
 
-    print("Top Feature Importance")
+    print("Exploratory Logistic Regression Feature Importance")
     for row in importance.head(10).itertuples(index=False):
         print(f"{row.feature}: {row.importance:.6f}")
     print()
 
-    print("Error Counts")
+    print("Validation Error Counts for Exploratory Logistic Regression")
     counts = results["error_type"].value_counts()
     error_counts = pd.DataFrame(
         {
@@ -234,6 +260,9 @@ def print_feature_importance_and_errors(
     if {"false_negative", "true_positive"}.issubset(gap_table.columns):
         gap_table["gap"] = (gap_table["false_negative"] - gap_table["true_positive"]).abs()
         gap_table = gap_table.sort_values("gap", ascending=False).head(10)
+        gap_table.reset_index(names="feature").to_csv(
+            OUTPUT_DIR / "missed_vs_caught_fraud_gaps.csv", index=False
+        )
 
         print("Missed Fraud vs Caught Fraud Gaps")
         for feature, row in gap_table.iterrows():
@@ -242,13 +271,18 @@ def print_feature_importance_and_errors(
 
 
 def main() -> None:
+    ensure_output_dir()
+
     df = load_data()
     train_df, validation_df = load_model_splits()
+    fraud_group_summary = get_fraud_group_summary(df)
     correlations = get_correlations(df)
+    fraud_group_summary.to_csv(OUTPUT_DIR / "fraud_group_summary.csv", index=False)
     correlations.to_csv(OUTPUT_DIR / "correlations.csv", index=False)
     save_class_balance_graph(df)
     save_correlation_graph(correlations)
     print_eda(df)
+    print_fraud_group_summary(fraud_group_summary)
     print_correlations(correlations)
     print_outliers(df)
     print_indicators(df)
