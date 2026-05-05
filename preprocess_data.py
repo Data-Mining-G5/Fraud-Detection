@@ -5,6 +5,7 @@ import zipfile
 from pathlib import Path
 
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
 
 
 ROOT = Path(__file__).resolve().parent
@@ -12,6 +13,7 @@ DEFAULT_ARCHIVE_PATH = ROOT / "archive.zip"
 DEFAULT_OUTPUT_PATH = ROOT / "clean_data.csv"
 DEFAULT_SPLIT_DIR = ROOT / "data" / "processed"
 EXPECTED_COLUMNS = {"Time", "Amount", "Class"}
+SCALE_COLUMNS = ["Time", "Amount"]
 DEFAULT_RANDOM_STATE = 42
 DEFAULT_TRAIN_SIZE = 0.60
 DEFAULT_VALIDATION_SIZE = 0.20
@@ -87,6 +89,24 @@ def stratified_train_validation_test_split(
     )
 
 
+def scale_train_validation_test_splits(
+    train_df: pd.DataFrame,
+    validation_df: pd.DataFrame,
+    test_df: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    scaler = StandardScaler()
+    scaled_train_df = train_df.copy()
+    scaled_validation_df = validation_df.copy()
+    scaled_test_df = test_df.copy()
+
+    # Fit only on training data to avoid leaking validation/test distribution details.
+    scaled_train_df[SCALE_COLUMNS] = scaler.fit_transform(train_df[SCALE_COLUMNS])
+    scaled_validation_df[SCALE_COLUMNS] = scaler.transform(validation_df[SCALE_COLUMNS])
+    scaled_test_df[SCALE_COLUMNS] = scaler.transform(test_df[SCALE_COLUMNS])
+
+    return scaled_train_df, scaled_validation_df, scaled_test_df
+
+
 def summarize_split(name: str, split_df: pd.DataFrame) -> str:
     class_counts = split_df["Class"].value_counts().sort_index()
     non_fraud_count = int(class_counts.get(0, 0))
@@ -154,12 +174,16 @@ def main() -> None:
     raw_df = load_creditcard_archive(args.archive)
     clean_df = preprocess(raw_df)
     train_df, validation_df, test_df = stratified_train_validation_test_split(clean_df)
+    train_df, validation_df, test_df = scale_train_validation_test_splits(
+        train_df, validation_df, test_df
+    )
 
     print(summarize(raw_df, clean_df))
     print("Stratified train/validation/test split")
     print(summarize_split("Train", train_df))
     print(summarize_split("Validation", validation_df))
     print(summarize_split("Test", test_df))
+    print("Scaled Time and Amount with StandardScaler fit on train only.")
 
     if args.dry_run:
         print("Dry run complete; no output file written.")
