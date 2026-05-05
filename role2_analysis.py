@@ -112,10 +112,11 @@ def print_outliers(df: pd.DataFrame) -> None:
             }
         )
 
-    outliers = pd.DataFrame(rows).sort_values("fraud_lift", ascending=False).head(10)
+    outliers = pd.DataFrame(rows).sort_values("fraud_lift", ascending=False)
+    outliers.to_csv(OUTPUT_DIR / "outlier_signals.csv", index=False)
 
     print("Top Outlier Signals")
-    for row in outliers.itertuples(index=False):
+    for row in outliers.head(10).itertuples(index=False):
         print(f"{row.feature}: lift={row.fraud_lift:.2f} count={row.count}")
     print()
 
@@ -147,10 +148,11 @@ def print_indicators(df: pd.DataFrame) -> None:
                 }
             )
 
-    indicators = pd.DataFrame(rows).sort_values("fraud_lift", ascending=False).head(10)
+    indicators = pd.DataFrame(rows).sort_values("fraud_lift", ascending=False)
+    indicators.to_csv(OUTPUT_DIR / "indicator_rules.csv", index=False)
 
     print("Top Indicator Rules")
-    for row in indicators.itertuples(index=False):
+    for row in indicators.head(10).itertuples(index=False):
         print(f"{row.rule}: lift={row.fraud_lift:.2f} count={row.count}")
     print()
 
@@ -177,6 +179,7 @@ def print_feature_importance_and_errors(
             "importance": np.abs(model.coef_[0]),
         }
     ).sort_values("importance", ascending=False)
+    importance.to_csv(OUTPUT_DIR / "feature_importance.csv", index=False)
 
     probs = model.predict_proba(x_validation)[:, 1]
     preds = (probs >= 0.5).astype(int)
@@ -201,6 +204,23 @@ def print_feature_importance_and_errors(
 
     print("Error Counts")
     counts = results["error_type"].value_counts()
+    error_counts = pd.DataFrame(
+        {
+            "error_type": [
+                "true_positive",
+                "false_negative",
+                "false_positive",
+                "true_negative",
+            ],
+            "count": [
+                int(counts.get("true_positive", 0)),
+                int(counts.get("false_negative", 0)),
+                int(counts.get("false_positive", 0)),
+                int(counts.get("true_negative", 0)),
+            ],
+        }
+    )
+    error_counts.to_csv(OUTPUT_DIR / "validation_error_counts.csv", index=False)
     for label in ["true_positive", "false_negative", "false_positive", "true_negative"]:
         print(f"{label}: {int(counts.get(label, 0))}")
     print()
@@ -225,6 +245,7 @@ def main() -> None:
     df = load_data()
     train_df, validation_df = load_model_splits()
     correlations = get_correlations(df)
+    correlations.to_csv(OUTPUT_DIR / "correlations.csv", index=False)
     save_class_balance_graph(df)
     save_correlation_graph(correlations)
     print_eda(df)
