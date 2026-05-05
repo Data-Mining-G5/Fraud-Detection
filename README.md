@@ -6,6 +6,29 @@
 
 Role-specific Python scripts contain the reusable implementation used by the notebook. This keeps the notebook readable for review while keeping the actual work easier to test, revise, and reuse.
 
+## Python Setup
+
+This project requires the dependencies listed in `requirements.txt` to run the notebook and the supporting scripts successfully.
+
+From the project root, install them with:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+If `pip` is missing in your local Python install, bootstrap it first:
+
+```bash
+python -m ensurepip --upgrade
+python -m pip install --upgrade pip
+```
+
+Once the dependencies are installed, you can validate the environment with:
+
+```bash
+python preprocess_data.py --dry-run
+```
+
 ## Project Roles
 
 ### Role 1: Data Preprocessing
