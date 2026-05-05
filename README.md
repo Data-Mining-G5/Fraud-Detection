@@ -98,7 +98,25 @@ python role2_analysis.py
 
 Responsible: Jack Underhill
 
-Stub: logistic regression baseline, random forest, gradient boosted trees, class weighting, and sampling experiments.
+Role 3 owns validation-set model comparison before final test-set evaluation. The notebook runs this step by using `role3_modeling.py`, which:
+
+- Load `data/processed/train.csv` and `data/processed/validation.csv` from Role 1.
+- Train logistic regression, random forest, and gradient boosted tree models.
+- Compare baseline models, class-weighted models, and one simple undersampled logistic regression experiment.
+- Score each model on the validation split at the default `0.5` threshold.
+- Save validation comparison outputs for Role 4 threshold tuning and final discussion.
+
+When the Role 3 script is run, it writes these artifacts:
+
+- `role3_outputs/model_comparison.csv`
+- `role3_outputs/validation_predictions.csv`
+- `role3_outputs/best_model_summary.txt`
+
+To run the Role 3 script directly after Role 1 artifacts exist, run from the project root:
+
+```bash
+python role3_modeling.py
+```
 
 ### Role 4: Evaluation and Final Integration
 

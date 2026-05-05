@@ -13,6 +13,7 @@ data/processed/*.csv
 
 # Generated analysis outputs
 role2_outputs/
+role3_outputs/
 
 # Local/editor/OS
 .DS_Store
