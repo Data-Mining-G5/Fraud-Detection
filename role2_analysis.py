@@ -4,11 +4,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
 
 
 ROOT = Path(__file__).resolve().parent
 DATA_PATH = ROOT / "clean_data.csv"
+TRAIN_PATH = ROOT / "data" / "processed" / "train.csv"
+VALIDATION_PATH = ROOT / "data" / "processed" / "validation.csv"
 OUTPUT_DIR = ROOT / "role2_outputs"
 OUTPUT_DIR.mkdir(exist_ok=True)
 
@@ -18,6 +19,20 @@ def load_data() -> pd.DataFrame:
     if "Class" not in df.columns:
         raise ValueError("Expected a 'Class' column in clean_data.csv")
     return df
+
+
+def load_model_splits() -> tuple[pd.DataFrame, pd.DataFrame]:
+    train_df = pd.read_csv(TRAIN_PATH)
+    validation_df = pd.read_csv(VALIDATION_PATH)
+
+    for split_name, split_df in [
+        ("data/processed/train.csv", train_df),
+        ("data/processed/validation.csv", validation_df),
+    ]:
+        if "Class" not in split_df.columns:
+            raise ValueError(f"Expected a 'Class' column in {split_name}")
+
+    return train_df, validation_df
 
 
 def save_class_balance_graph(df: pd.DataFrame) -> None:
@@ -137,17 +152,13 @@ def print_indicators(df: pd.DataFrame) -> None:
     print()
 
 
-def print_feature_importance_and_errors(df: pd.DataFrame) -> None:
-    x = df.drop(columns="Class")
-    y = df["Class"]
-
-    x_train, x_test, y_train, y_test = train_test_split(
-        x,
-        y,
-        test_size=0.2,
-        random_state=42,
-        stratify=y,
-    )
+def print_feature_importance_and_errors(
+    train_df: pd.DataFrame, validation_df: pd.DataFrame
+) -> None:
+    x_train = train_df.drop(columns="Class")
+    y_train = train_df["Class"]
+    x_validation = validation_df.drop(columns="Class")
+    y_validation = validation_df["Class"]
 
     model = LogisticRegression(
         max_iter=1000,
@@ -159,16 +170,16 @@ def print_feature_importance_and_errors(df: pd.DataFrame) -> None:
 
     importance = pd.DataFrame(
         {
-            "feature": x.columns,
+            "feature": x_train.columns,
             "importance": np.abs(model.coef_[0]),
         }
     ).sort_values("importance", ascending=False)
 
-    probs = model.predict_proba(x_test)[:, 1]
+    probs = model.predict_proba(x_validation)[:, 1]
     preds = (probs >= 0.5).astype(int)
 
-    results = x_test.copy()
-    results["actual"] = y_test.to_numpy()
+    results = x_validation.copy()
+    results["actual"] = y_validation.to_numpy()
     results["predicted"] = preds
     results["error_type"] = np.select(
         [
@@ -193,7 +204,7 @@ def print_feature_importance_and_errors(df: pd.DataFrame) -> None:
 
     gap_table = (
         results[results["error_type"].isin(["false_negative", "true_positive"])]
-        .groupby("error_type")[x.columns]
+        .groupby("error_type")[x_train.columns]
         .mean()
         .transpose()
     )
@@ -209,6 +220,7 @@ def print_feature_importance_and_errors(df: pd.DataFrame) -> None:
 
 def main() -> None:
     df = load_data()
+    train_df, validation_df = load_model_splits()
     correlations = get_correlations(df)
     save_class_balance_graph(df)
     save_correlation_graph(correlations)
@@ -216,7 +228,7 @@ def main() -> None:
     print_correlations(correlations)
     print_outliers(df)
     print_indicators(df)
-    print_feature_importance_and_errors(df)
+    print_feature_importance_and_errors(train_df, validation_df)
 
 
 if __name__ == "__main__":
