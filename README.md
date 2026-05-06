@@ -122,4 +122,25 @@ python role3_modeling.py
 
 Responsible: Jack Underhill
 
-Stub: threshold tuning, final evaluation tables, limitations/challenges/ethics discussion, report integration, and presentation prep.
+Role 4 owns the final evaluation handoff after Role 3 model selection. It uses the selected Random Forest model, tunes only the decision threshold on the validation split, and then evaluates the chosen threshold once on the held-out test split.
+
+The notebook runs this step by using `role4_evaluation.py`, which:
+
+- Load `data/processed/train.csv`, `data/processed/validation.csv`, and `data/processed/test.csv` from Role 1.
+- Train the selected Role 3 model: Random Forest.
+- Tune fraud decision thresholds on the validation split using F1 score.
+- Apply the selected threshold once to the held-out test split.
+- Save threshold-tuning results, final test metrics, test predictions, and a short final summary.
+
+When the Role 4 script is run, it writes these artifacts:
+
+- `role4_outputs/threshold_tuning.csv`
+- `role4_outputs/final_test_metrics.csv`
+- `role4_outputs/test_predictions.csv`
+- `role4_outputs/final_summary.txt`
+
+To run the Role 4 script directly after Role 1 artifacts exist, run from the project root:
+
+```bash
+python role4_evaluation.py
+```
